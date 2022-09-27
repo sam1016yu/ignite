@@ -758,6 +758,7 @@ public class GridDistributedCacheEntry extends GridCacheMapEntry {
 
         if (owner.local() && owner.next() != null) {
             for (GridCacheMvccCandidate cand = owner.next(); cand != null; cand = cand.next()) {
+                log.warning("CoverageCheck|ig12087");
                 assert cand.local() : "Remote candidate cannot be part of thread chain: " + cand;
 
                 // Allow next lock in the thread to proceed.

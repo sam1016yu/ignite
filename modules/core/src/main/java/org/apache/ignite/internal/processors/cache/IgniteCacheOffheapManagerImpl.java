@@ -1126,7 +1126,7 @@ public class IgniteCacheOffheapManagerImpl implements IgniteCacheOffheapManager 
     }
 
     /** {@inheritDoc} */
-    @Override public GridCloseableIterator<CacheDataRow> reservedIterator(int part, AffinityTopologyVersion topVer) {
+    @Override public GridCloseableIterator<CacheDataRow> reservedIterator(int part, AffinityTopologyVersion topVer) throws IgniteCheckedException{
         GridDhtLocalPartition loc = grp.topology().localPartition(part, topVer, false);
 
         if (loc == null || !loc.reserve())
@@ -1141,12 +1141,12 @@ public class IgniteCacheOffheapManagerImpl implements IgniteCacheOffheapManager 
 
         CacheDataStore data = dataStore(loc);
 
+        final GridCursor<? extends CacheDataRow> cur = data.cursor(CacheDataRowAdapter.RowData.FULL_WITH_HINTS);
+
         return new GridCloseableIteratorAdapter<CacheDataRow>() {
             /** */
             private CacheDataRow next;
-
-            /** */
-            private GridCursor<? extends CacheDataRow> cur;
+            
 
             @Override protected CacheDataRow onNext() {
                 CacheDataRow res = next;
@@ -1157,8 +1157,8 @@ public class IgniteCacheOffheapManagerImpl implements IgniteCacheOffheapManager 
             }
 
             @Override protected boolean onHasNext() throws IgniteCheckedException {
-                if (cur == null)
-                    cur = data.cursor(CacheDataRowAdapter.RowData.FULL_WITH_HINTS);
+                // if (cur == null)
+                //     cur = data.cursor(CacheDataRowAdapter.RowData.FULL_WITH_HINTS);
 
                 if (next != null)
                     return true;
@@ -1168,8 +1168,8 @@ public class IgniteCacheOffheapManagerImpl implements IgniteCacheOffheapManager 
 
                 boolean hasNext = next != null;
 
-                if (!hasNext)
-                    cur = null;
+                // if (!hasNext)
+                //     cur = null;
 
                 return hasNext;
             }
@@ -1180,15 +1180,22 @@ public class IgniteCacheOffheapManagerImpl implements IgniteCacheOffheapManager 
 
                 loc.release();
 
-                cur = null;
+                // cur = null;
             }
         };
+    }
+
+    private long memoryUsage() {
+        Runtime runtime = Runtime.getRuntime();
+        return runtime.totalMemory() - runtime.freeMemory();     
     }
 
     /** {@inheritDoc} */
     @Override public IgniteRebalanceIterator rebalanceIterator(IgniteDhtDemandedPartitionsMap parts,
         AffinityTopologyVersion topVer)
         throws IgniteCheckedException {
+        
+        long mem1 = memoryUsage();
 
         TreeMap<Integer, GridCloseableIterator<CacheDataRow>> iterators = new TreeMap<>();
 
@@ -1213,6 +1220,10 @@ public class IgniteCacheOffheapManagerImpl implements IgniteCacheOffheapManager 
         for (Integer p : missing)
             iter.setPartitionMissing(p);
 
+        long mem2 = memoryUsage();
+
+        log.error("!!! Heap Used Memory  (B): " + (mem2-mem1));  
+        
         return iter;
     }
 

@@ -1185,10 +1185,17 @@ public class IgniteCacheOffheapManagerImpl implements IgniteCacheOffheapManager 
         };
     }
 
+    private long memoryUsage() {
+        Runtime runtime = Runtime.getRuntime();
+        return runtime.totalMemory() - runtime.freeMemory();     
+    }
+
     /** {@inheritDoc} */
     @Override public IgniteRebalanceIterator rebalanceIterator(IgniteDhtDemandedPartitionsMap parts,
         AffinityTopologyVersion topVer)
         throws IgniteCheckedException {
+        
+        long mem1 = memoryUsage();
 
         TreeMap<Integer, GridCloseableIterator<CacheDataRow>> iterators = new TreeMap<>();
 
@@ -1212,6 +1219,10 @@ public class IgniteCacheOffheapManagerImpl implements IgniteCacheOffheapManager 
 
         for (Integer p : missing)
             iter.setPartitionMissing(p);
+
+        long mem2 = memoryUsage();
+
+        log.error("!!! Heap Used Memory  (B): " + (mem2-mem1));  
 
         return iter;
     }

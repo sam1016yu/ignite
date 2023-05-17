@@ -62,7 +62,7 @@ public class RebalanceIteratorLargeEntriesOOMTest extends GridCommonAbstractTest
 
     /** {@inheritDoc} */
     @Override protected List<String> additionalRemoteJvmArgs() {
-        return Arrays.asList("-Xmx256m", "-Xms256m");
+        return Arrays.asList("-Xmx2048m", "-Xms2048m");
     }
 
     /** {@inheritDoc} */

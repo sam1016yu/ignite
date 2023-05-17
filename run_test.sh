@@ -9,7 +9,7 @@ result_file="raw_result_before"
 
 [ -f "$result_file" ] && rm $result_file
 
-for percent in 1 2 3 4 5
+for percent in 1 2 3 4 5 6 7 8 9 10
 do
     for repeat in 1 2 3
     do

@@ -24,3 +24,4 @@ done
 
 mv $result_file $HOME
 rm test.log
+git restore .

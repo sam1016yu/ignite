@@ -21,3 +21,6 @@ do
     grep -F '!!!' test.log >> $result_file
     done
 done
+
+mv $result_file $HOME
+rm test.log

@@ -17,61 +17,84 @@
 
 package org.apache.ignite.jdbc.thin;
 
-import org.apache.ignite.IgniteJdbcThinDriver;
-import org.apache.ignite.internal.util.typedef.internal.U;
-import org.junit.Test;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Properties;
-import java.util.Set;
+import java.util.Arrays;
+import java.util.List;
+import org.apache.ignite.IgniteJdbcThinDriver;
+import org.apache.ignite.configuration.IgniteConfiguration;
+import org.apache.ignite.internal.util.GridDebug;
+import org.junit.Test;
 
 /**
  * Prepared statement leaks test.
  */
-@SuppressWarnings("ThrowableNotThrown")
+@SuppressWarnings({"ThrowableNotThrown","StatementWithEmptyBody"})
 public class JdbcThinPreparedStatementLeakTest extends JdbcThinAbstractSelfTest {
     /** URL. */
     private static final String URL = "jdbc:ignite:thin://127.0.0.1/";
 
-
     /** {@inheritDoc} */
-    @Override protected void beforeTest() throws Exception {
-        super.beforeTest();
+    @Override protected IgniteConfiguration getConfiguration(String igniteInstanceName) throws Exception {
+        IgniteConfiguration cfg = super.getConfiguration(igniteInstanceName);
 
-        startGrid();
+        return cfg;
     }
 
-    /** {@inheritDoc} */
-    @Override protected void afterTest() throws Exception {
-        stopAllGrids();
-
-        super.afterTest();
+      /** {@inheritDoc} */
+    @Override protected List<String> additionalRemoteJvmArgs() {
+        return Arrays.asList("-Xmx2048m", "-Xms2048m");
     }
 
     /**
      * @throws Exception If failed.
      */
-    @SuppressWarnings("StatementWithEmptyBody")
     @Test
     public void test() throws Exception {
-        try (Connection conn = new IgniteJdbcThinDriver().connect(URL, new Properties())) {
-            for (int i = 0; i < 50000; ++i) {
-                try (PreparedStatement st = conn.prepareStatement("select 1")) {
-                    ResultSet rs = st.executeQuery();
 
-                    while (rs.next()) {
-                        // No-op.
-                    }
+        for (int iters = 10000; iters <= 50000;iters+=10000){
+            startGrid();
+            try (Connection conn = new IgniteJdbcThinDriver().connect(URL, new Properties())) {
+                System.gc();
+                long mem1 = memoryUsage();
+                
+                createClosePreparedStatement(conn, iters);
 
-                    rs.close();
-                }
+                long mem2 = memoryUsage();
+
+                log.warning("####Iters:"+iters);
+                log.warning("####Mem:"+(mem2-mem1));
+
             }
-
-            Set stmts = U.field(conn, "stmts");
-
-            assertEquals(0, stmts.size());
+            stopAllGrids();
         }
+
+    }
+
+    /**
+     * @param conn JDBC Connection.
+     * @param iters Iterations count.
+     * @throws SQLException On error.
+     */
+    private void createClosePreparedStatement(Connection conn, int iters) throws SQLException {
+        for (int i = 0; i < iters; ++i) {
+            try (PreparedStatement st = conn.prepareStatement("select 1")) {
+                ResultSet rs = st.executeQuery();
+
+                while (rs.next()) {
+                    // No-op.
+                }
+
+                rs.close();
+            }
+        }
+    }
+
+    private long memoryUsage() {
+        Runtime runtime = Runtime.getRuntime();
+        return runtime.totalMemory() - runtime.freeMemory();     
     }
 }

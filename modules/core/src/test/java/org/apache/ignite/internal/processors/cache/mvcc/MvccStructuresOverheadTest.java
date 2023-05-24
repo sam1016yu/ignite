@@ -41,7 +41,7 @@ public class MvccStructuresOverheadTest extends GridCommonAbstractTest {
 
     /** {@inheritDoc} */
     @Override protected List<String> additionalRemoteJvmArgs() {
-        return Arrays.asList("-Xmx2048m", "-Xms2048m");
+        return Arrays.asList("-Xmx10240m", "-Xms10240m");
     }
 
     private long memoryUsage() {

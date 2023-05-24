@@ -54,23 +54,23 @@ public class JdbcThinPreparedStatementLeakTest extends JdbcThinAbstractSelfTest 
      */
     @Test
     public void test() throws Exception {
-
-        for (int iters = 10000; iters <= 50000;iters+=10000){
-            startGrid();
+        startGrid();
+        for (int i = 1; i <= 10 ; i++){
+            
             try (Connection conn = new IgniteJdbcThinDriver().connect(URL, new Properties())) {
-                System.gc();
-                long mem1 = memoryUsage();
+                // System.gc();
+                // long mem1 = memoryUsage();
                 
-                createClosePreparedStatement(conn, iters);
+                createClosePreparedStatement(conn, 5000);
 
                 long mem2 = memoryUsage();
 
-                log.warning("####Iters:"+iters);
-                log.warning("####Mem:"+(mem2-mem1));
+                log.warning("####Iters:"+i);
+                log.warning("####Mem:"+mem2);
 
-            }
-            stopAllGrids();
+            }   
         }
+        stopAllGrids();
 
     }
 

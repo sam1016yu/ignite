@@ -39,6 +39,8 @@ import org.junit.Test;
  */
 public class MvccStructuresOverheadTest extends GridCommonAbstractTest {
 
+    //TODO: need to better understand client restart logic and find place to measure memory usage
+
     /** {@inheritDoc} */
     @Override protected List<String> additionalRemoteJvmArgs() {
         return Arrays.asList("-Xmx10240m", "-Xms10240m");

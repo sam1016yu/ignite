@@ -1,6 +1,6 @@
 #!/bin/bash
 
-mvn clean install
+mvn clean
 
 result_file="raw_result_after"
 

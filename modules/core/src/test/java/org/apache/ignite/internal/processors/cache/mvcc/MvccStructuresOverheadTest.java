@@ -18,6 +18,8 @@
 package org.apache.ignite.internal.processors.cache.mvcc;
 
 import java.util.Map;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.ignite.IgniteCache;
@@ -37,23 +39,21 @@ import org.junit.Test;
  */
 public class MvccStructuresOverheadTest extends GridCommonAbstractTest {
 
-    /**
-     * Amount of restarts of clients.
-     */
-    private static final int CLIENT_RESTARTS = 10;
+    /** {@inheritDoc} */
+    @Override protected List<String> additionalRemoteJvmArgs() {
+        return Arrays.asList("-Xmx10240m", "-Xms10240m");
+    }
 
-    /**
-     * Is cahce confugured is MVCC or not.
-     */
-    private boolean isMvccCache = false;
+    private long memoryUsage() {
+        Runtime runtime = Runtime.getRuntime();
+        return runtime.totalMemory() - runtime.freeMemory();     
+    }
 
     /** {@inheritDoc} */
     @Override protected IgniteConfiguration getConfiguration(String igniteInstanceName) throws Exception {
         return super.getConfiguration(igniteInstanceName)
             .setCacheConfiguration(new CacheConfiguration(DEFAULT_CACHE_NAME)
-                .setAtomicityMode(isMvccCache ?
-                    CacheAtomicityMode.TRANSACTIONAL_SNAPSHOT :
-                    CacheAtomicityMode.ATOMIC));
+                .setAtomicityMode(CacheAtomicityMode.ATOMIC));
     }
 
     /** {@inheritDoc} */
@@ -70,43 +70,38 @@ public class MvccStructuresOverheadTest extends GridCommonAbstractTest {
      */
     @Test
     public void testWithoutMvcc() throws Exception {
-        log.warning("####------------------");
-        log.warning("####MVCC disabled");
-        restartClients();
+        for (int i = 10; i <= 100; i+=10){
+            log.warning("####clents restarts :" + i);
+            System.gc();
+            long mem1 = memoryUsage();
+            restartClients(i);
+            long mem2 = memoryUsage();
+            log.warning("####Memory usage: " + (mem2 - mem1));
+            stopAllGrids();
+        }
+           
     }
 
-    /**
-     * Starts grid with WVCC cache.
-     *
-     * @throws Exception If failed.
-     */
-    @Test
-    public void testWithMvcc() throws Exception {
-        isMvccCache = true;
-        log.warning("####------------------");
-        log.warning("####MVCC enabledd");
-        restartClients();
-    }
+
 
     /**
      * Starts cluster and restarts several clients over it.
      *
      * @throws Exception If failed.
      */
-    private void restartClients() throws Exception {
+    private void restartClients(int client_restarts) throws Exception {
         IgniteEx ignite = startGrid(0);
 
-        AtomicBoolean mvccMessageTranslated = new AtomicBoolean();
+        // AtomicBoolean mvccMessageTranslated = new AtomicBoolean();
 
-        ignite.context().io().addMessageListener(GridTopic.TOPIC_CACHE_COORDINATOR, (nodeId, msg, plc) -> {
-            if (msg instanceof MvccRecoveryFinishedMessage)
-                mvccMessageTranslated.set(true);
-        });
+        // ignite.context().io().addMessageListener(GridTopic.TOPIC_CACHE_COORDINATOR, (nodeId, msg, plc) -> {
+        //     if (msg instanceof MvccRecoveryFinishedMessage)
+        //         mvccMessageTranslated.set(true);
+        // });
 
-        Map recoveryBallotBoxes = U.field(ignite.context().coordinators(), "recoveryBallotBoxes");
 
-        for (int i = 0; i < CLIENT_RESTARTS; i++) {
-            log.warning("####clents restarts :" + (i+1));
+        for (int i = 0; i < client_restarts; i++) {
+            
             IgniteEx client = startClientGrid(1);
 
             IgniteCache cache = client.cache(DEFAULT_CACHE_NAME);
@@ -115,11 +110,9 @@ public class MvccStructuresOverheadTest extends GridCommonAbstractTest {
 
             client.close();
 
-            if (isMvccCache) {
-                GridTestUtils.waitForCondition(mvccMessageTranslated::get, 10_000);
-                mvccMessageTranslated.compareAndSet(true, false);
-            }
-            log.warning("####Size of recoveryBallotBoxes " + recoveryBallotBoxes.size());
+            // GridTestUtils.waitForCondition(mvccMessageTranslated::get, 10_000);
+            // mvccMessageTranslated.compareAndSet(true, false);
+
         }
     }
 }

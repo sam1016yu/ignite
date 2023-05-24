@@ -24,9 +24,10 @@ import java.sql.SQLException;
 import java.util.Properties;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import org.apache.ignite.IgniteJdbcThinDriver;
 import org.apache.ignite.configuration.IgniteConfiguration;
-import org.apache.ignite.internal.util.GridDebug;
+import org.apache.ignite.internal.util.typedef.internal.U;
 import org.junit.Test;
 
 /**
@@ -56,17 +57,11 @@ public class JdbcThinPreparedStatementLeakTest extends JdbcThinAbstractSelfTest 
     public void test() throws Exception {
 
         for (int iters = 10000; iters <= 50000;iters+=10000){
+            log.warning("####Iters:"+iters);
             startGrid();
             try (Connection conn = new IgniteJdbcThinDriver().connect(URL, new Properties())) {
-                System.gc();
-                long mem1 = memoryUsage();
                 
                 createClosePreparedStatement(conn, iters);
-
-                long mem2 = memoryUsage();
-
-                log.warning("####Iters:"+iters);
-                log.warning("####Mem:"+(mem2-mem1));
 
             }
             stopAllGrids();
@@ -91,10 +86,8 @@ public class JdbcThinPreparedStatementLeakTest extends JdbcThinAbstractSelfTest 
                 rs.close();
             }
         }
+        Set stmts = U.field(conn, "stmts");
+        log.warning("####stmts:"+stmts.size());
     }
 
-    private long memoryUsage() {
-        Runtime runtime = Runtime.getRuntime();
-        return runtime.totalMemory() - runtime.freeMemory();     
-    }
 }

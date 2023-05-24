@@ -116,7 +116,7 @@ public class MvccStructuresOverheadTest extends GridCommonAbstractTest {
             client.close();
 
             if (isMvccCache) {
-
+                GridTestUtils.waitForCondition(mvccMessageTranslated::get, 10_000);
                 mvccMessageTranslated.compareAndSet(true, false);
             }
             log.warning("####Size of recoveryBallotBoxes " + recoveryBallotBoxes.size());

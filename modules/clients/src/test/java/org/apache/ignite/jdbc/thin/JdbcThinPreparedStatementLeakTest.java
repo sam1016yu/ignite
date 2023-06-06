@@ -25,7 +25,9 @@ import java.util.Properties;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.ArrayList;
 import org.apache.ignite.IgniteJdbcThinDriver;
+import org.apache.ignite.internal.jdbc.thin.JdbcThinStatement;
 import org.apache.ignite.configuration.IgniteConfiguration;
 import org.apache.ignite.internal.util.typedef.internal.U;
 import org.junit.Test;
@@ -86,7 +88,8 @@ public class JdbcThinPreparedStatementLeakTest extends JdbcThinAbstractSelfTest 
                 rs.close();
             }
         }
-        Set stmts = U.field(conn, "stmts");
+        
+        ArrayList<JdbcThinStatement> stmts = U.field(conn, "stmts");
         log.warning("####stmts:"+stmts.size());
     }
 

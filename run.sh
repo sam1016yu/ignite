@@ -11,4 +11,5 @@ do
     grep -F '####' test.log >> $result_file
 done
 
-
+rm test.log
+mv $result_file $HOME

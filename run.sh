@@ -10,3 +10,6 @@ do
     mvn test -U -Plgpl,examples,-clean-libs,-release -Dmaven.test.failure.ignore=true -DfailIfNoTests=false -Dtest=JdbcThinPreparedStatementLeakTest &> test.log
     grep -F '####' test.log >> $result_file
 done
+
+rm test.log
+mv $result_file $HOME
